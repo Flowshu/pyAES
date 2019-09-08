@@ -1,88 +1,107 @@
-import converter
-import xor
+import utils
+import sys
+
+#import padding
 import gf256
 import s_box
 import key_schedule
 
-def encrypt(state):
-    keys = key_schedule.generate()
-    sub_box = s_box.create()
+def encrypt(file,key):
+    file = open(file)
+    msg = file.read()
+    msg_bytes = bytes(msg,encoding='utf-8')
+    while (len(msg_bytes) % 16 != 0):
+        msg_bytes += b'\x00'
+    blocks = build_blocks(msg_bytes)
     
-    for q in range(9):
-        sub_bytes(state)
+
+def cipher(state, key):
+    keys = key_schedule.generate(key)
+    sub_box = s_box.create()
+    for key in keys:
+        sub_bytes(state,sub_box)
         shift_rows(state)
         mix_columns(state)
         add_round_key(state,key)
 
-def build_block(word):
-    bits = list(converter.str_to_bits(word))
-    #print(bits)
-    grid = {}
+def sub_bytes(state,sub_box):
+    result = state
     for row in range(4):
-        vector = []
-        for byt in range(4):
-            bytval = ""
-            for bit in range(8):
-                bytval += bits.pop(0)
-            vector.append(bytval)
-        grid[row] = vector
-    #for r in range(4):
-    #    print(grid[r])
-    return grid
+        for column in range(4):
+            value = int.from_bytes(state[row][column], byteorder=sys.byteorder)
+            srow = int(value / 16)
+            scol = value % 16
+            result[row][column] = bytes([sub_box[srow][scol]])
+    return result
 
-def shift_rows(word):
-    block = build_block(word)
-    for q in range(4):
-        row = block[q]
-        for w in range(q):
-            row.append(row.pop(0))
-    for e in range(4):
-        print(block[e])
-    #return block
+def shift_rows(state):
+    for row in range(4):
+        current_row = state[row]
+        for shift in range(row):
+            current_row.append(current_row.pop(0))
+    for row in state:
+        print(row)
+    return state
+
+def mix_columns(state):
+    state = state_to_columns(state)
+    result = state
+    factor = [[2,3,1,1],[1,2,3,1],[1,1,2,3],[3,1,1,2]]
+    for column in range(4):
+        for element in range(4):
+            result[column][element] = multiply_vectors(state[column],factor[element])
+    return state_to_rows(result)
+
+def multiply_vectors(column,factor):
+    out = 0
+    for x in range(4):
+        y = int.from_bytes(column[x], byteorder = sys.byteorder)
+        out ^= gf256.mul_bytes(y,factor[x])
+    return bytes([out])
 
 def add_round_key(state,key):
-    state_block = build_block(state)
-    key_block = build_block(key)
-    out = ""
-    for q in range(4):
-        state_row = state_block[q]
-        key_row = key_block[q]
-        for w in range(4):
-            print(state_row[w])
-            print(key_row[w])
-            xored = xor.crypt(chr(int(state_row[w],2)),chr(int(key_row[w],2)))
-            print(xored)
-            out += xored
-    return out
+    state = state_to_columns(state)
+    result = state
+    for column in range(4):
+        col = state[column]
+        for element in range(4):
+            result[column][element] = utils.xor(col[element],key[element])
+    return state_to_rows(result)
 
-def mix_columns(word):
-    word_list = list(word)
-    byts = []
-    for byt in range(4):
-        octet = ""
-        for bit in range(8):
-            octet += word_list.pop(0)
-        byts.append(octet)
-    factor = [[2,3,1,1],[1,2,3,1],[1,1,2,3],[3,1,1,2]]
-    for q in range(4):
-        out = 0
-        for e in range(4):
-            out ^= gf256.mul_bytes(int(byts[e],2),factor[q][e])
-        print(hex(out))
-#######################
-#######################
-#######################
-def gal_mul(byt1,byt2):
-    prod = [0,0,0,0,0,0,0,0,0,0,0,0,0,0,0]
-    for q in range(8):
-        for w in range(8):
-            q2 = 7-q
-            w2 = 7-w
-            if int(byt1[q2]) == 1 and int(byt2[w2]) == 1:
-                prod[q2+w2] += 1
-    for e in range(len(prod)):
-        prod[e] = str(prod[e] % 2)
-    result = "".join(prod)
-    print(result)
-    return int(result,2) % 0x11B
+###############################################################################
 
+def build_blocks(msg_bytes):
+    msg_bytes = list(msg_bytes)
+    blocks = []
+    for a in range(int(len(msg_bytes)/16)):
+        block = []
+        for b in range(4):
+            row = []
+            for c in range(4):
+                row.append(msg_bytes.pop(0))
+            block.append(row)
+        blocks.append(block)
+    return blocks
+
+# transforms the state from rows to columns
+def state_to_columns(state):
+    new_state = [[],[],[],[]]
+    for column in range(4):
+        for row in state:
+            new_state[column].append(row[column])
+    return new_state
+
+# transforms the state from columns to rows
+def state_to_rows(state):
+    return state_to_columns(state)
+
+if __name__ == "__main__":
+    state = [[b'\x01',b'\x01',b'\x01',b'\x01'],
+             [b'\x01',b'\x01',b'\x01',b'\x01'],
+             [b'\x01',b'\x01',b'\x01',b'\x01'],
+             [b'\x01',b'\x01',b'\x01',b'\x01']]
+    state2 = mix_columns(state)
+    state3 = add_round_key(state,[b'\x02',b'\x02',b'\x02',b'\x02'])
+    sub_box = s_box.create()
+    state4 = sub_bytes(state,sub_box)
+    print(state4)

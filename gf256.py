@@ -1,3 +1,5 @@
+#this module implements mathematical operations in the Galois-Filed 2^8 (GF256)
+
 import converter
 
 def add(byte1,byte2):

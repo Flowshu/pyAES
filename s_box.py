@@ -1,40 +1,24 @@
 import gf256
 
-def new_box():
-    box = []
-    for rows in range(16):
-        box.append([])
-        for columns in range(16):
-            box[rows].append([])
-    return box
-
-def out():
-    box = new_box()
-    for byt in range(256):
-        row = int(byt/16)
-        column = byt % 16
-        inverse = gf256.get_inverse(byt)
+def create():
+    box = [[0 for x in range(16)] for y in range(16)] 
+    for i in range(256):
+        row = int(i / 16)
+        column = i % 16
+        inverse = gf256.get_inverse(i)
         box[row][column] = sub(inverse)
     return box
 
-def create():
-    out = []
-    for q in range(256):
-        inverse = gf256.get_inverse(q)
-        out.append(sub(inverse))
-    return out
+def sub(inverse):
+    result = inverse
+    for k in range(4):
+        inverse = shift(inverse)
+        result ^= inverse
+    result ^= 0x63
+    return result
 
 def shift(byt):
     if byt & 0x80 == 0x80:
         return (byt << 1) - 255
     else:
         return byt << 1
-
-def sub(byt):
-    subst = byt
-    out = byt
-    for q in range(4):
-        subst = shift(subst)
-        out ^= subst
-    out ^= 0x63
-    return out
