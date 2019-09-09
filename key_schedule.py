@@ -21,7 +21,14 @@ def generate(key):
         #    expanded[q] = xor_words(expanded[q-len(words)],sub_word(expanded[q-1])
         else:
             expanded[q] = xor_words(expanded[q-len(words)],expanded[q-1])
-    return expanded
+    result = []
+    for x in range(11):
+        l = ""
+        for y in range(4):
+                for v in range(4):
+                    l += chr(expanded[x*4 + y][v])
+        result.append(bytes(l,"utf-8"))
+    return result
 
 def rot_word(word):
     word_copy = word
@@ -32,7 +39,7 @@ def sub_word(word):
     word_out = [0] * 4
     sub_box = s_box.create()
     for byt in range(4):
-        word_out[byt] = sub_box[word[byt]]
+        word_out[byt] = sub_box[int(byt / 16)][byt % 16]       
     return word_out
 
 def xor_words(word1,word2):
@@ -40,3 +47,8 @@ def xor_words(word1,word2):
     for byt in range(4):
         xored_word[byt] = word1[byt] ^ word2[byt]
     return xored_word
+
+if __name__ == "__main__":
+    result = generate('1234567890ABCDEF')
+    for w in range(11):
+        print(result[w])

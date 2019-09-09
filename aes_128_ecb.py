@@ -13,7 +13,10 @@ def encrypt(file,key):
     while (len(msg_bytes) % 16 != 0):
         msg_bytes += b'\x00'
     blocks = build_blocks(msg_bytes)
-    
+    print(blocks)
+    for block in blocks:
+        block = cipher(block,key)
+    print(blocks)
 
 def cipher(state, key):
     keys = key_schedule.generate(key)
@@ -39,8 +42,8 @@ def shift_rows(state):
         current_row = state[row]
         for shift in range(row):
             current_row.append(current_row.pop(0))
-    for row in state:
-        print(row)
+    #for row in state:
+        #print(row)
     return state
 
 def mix_columns(state):
@@ -65,13 +68,15 @@ def add_round_key(state,key):
     for column in range(4):
         col = state[column]
         for element in range(4):
-            result[column][element] = utils.xor(col[element],key[element])
+            #print(key,key[element])
+            result[column][element] = utils.xor(col[element],key)#[element])
     return state_to_rows(result)
 
 ###############################################################################
 
 def build_blocks(msg_bytes):
     msg_bytes = list(msg_bytes)
+    num_blocks = int(len(msg_bytes)/16)
     blocks = []
     for a in range(int(len(msg_bytes)/16)):
         block = []
@@ -81,7 +86,16 @@ def build_blocks(msg_bytes):
                 row.append(msg_bytes.pop(0))
             block.append(row)
         blocks.append(block)
-    return blocks
+    result = []
+    for w in range(num_blocks):
+        b = []
+        for x in range(4):
+            word = []
+            for y in range(4):
+                word.append(bytes(chr(blocks[w][x][y]),"utf-8"))
+            b.append(word)
+        result.append(b)
+    return result
 
 # transforms the state from rows to columns
 def state_to_columns(state):

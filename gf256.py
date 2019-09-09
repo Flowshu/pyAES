@@ -1,7 +1,5 @@
 #this module implements mathematical operations in the Galois-Filed 2^8 (GF256)
 
-import converter
-
 def add(byte1,byte2):
     if len(byte1) != 8 or len(byte2) != 8 or type(byte1) != str or type(byte2) != str:
         print("error in gf256.add()")

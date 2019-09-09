@@ -15,5 +15,5 @@ def xor(msg,key):
     #for byt in range(len(msg)):
     #    output.append(msg[byt] ^ key[byt % 16])
     #return bytes(output)
-    output = msg_int ^ key_int
-    return output.to_bytes(len(msg), byteorder = sys.byteorder)
+    output = (msg_int ^ key_int) % 2**32
+    return output.to_bytes(32, byteorder = sys.byteorder)
