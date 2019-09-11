@@ -9,6 +9,9 @@ def create():
         box[row][column] = sub(inverse)
     return box
 
+def create_inverse():
+    pass
+
 def sub(inverse):
     result = inverse
     for k in range(4):

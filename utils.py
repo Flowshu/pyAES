@@ -8,6 +8,12 @@ def base64Encode(msg):
 def base64Decode(base64_string):
     return base64.b64decode(base64_string)
 
+def hexEncode(msg):
+    pass
+
+def hexDecode(hex_string):
+    pass
+
 # computes the bitwise XOR of msg and key
 def xor(msg,key):
     msg_int = int.from_bytes(msg, byteorder = sys.byteorder)

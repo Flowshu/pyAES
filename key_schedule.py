@@ -1,7 +1,10 @@
 import s_box
 
 def generate(key):
-    rcon = [[0x1,0,0,0],[0x2,0,0,0],[0x4,0,0,0],[0x8,0,0,0],[0x10,0,0,0],[0x20,0,0,0],[0x40,0,0,0],[0x80,0,0,0],[0x1B,0,0,0],[0x36,0,0,0]]
+    rounds = check_key(key)
+    rcon = [[0x01,0,0,0],[0x02,0,0,0],[0x04,0,0,0],[0x08,0,0,0],
+            [0x10,0,0,0],[0x20,0,0,0],[0x40,0,0,0],[0x80,0,0,0],
+            [0x1B,0,0,0],[0x36,0,0,0]]
     key_bytes = list(bytes(key,"utf-8"))
     words = []
     for q in range(4):
@@ -10,8 +13,7 @@ def generate(key):
             byt = key_bytes.pop(0)
             word.append(byt)
         words.append(word)
-    expanded = [0] * 44
-    rounds = 11
+    expanded = [0] * rounds
     for q in range(rounds*len(words)):
         if q < len(words):
             expanded[q] = words[q]
@@ -29,6 +31,16 @@ def generate(key):
                     l += chr(expanded[x*4 + y][v])
         result.append(bytes(l,"utf-8"))
     return result
+
+def check_key(key):
+    if len(key) == 16:
+        return 11
+    elif len(key) == 24:
+        pass
+    elif len(key) == 32:
+        pass
+    else:
+        pass
 
 def rot_word(word):
     word_copy = word

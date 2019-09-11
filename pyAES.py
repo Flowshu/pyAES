@@ -7,16 +7,17 @@ import s_box
 import key_schedule
 
 def encrypt(file,key):
-    file = open(file)
-    msg = file.read()
+    input_file = open(file)
+    msg = input_file.read()
+    input_file.close()
     msg_bytes = bytes(msg,encoding='utf-8')
-    while (len(msg_bytes) % 16 != 0):
-        msg_bytes += b'\x00'
     blocks = build_blocks(msg_bytes)
-    print(blocks)
     for block in blocks:
         block = cipher(block,key)
-    print(blocks)
+    enc_msg = build_message(blocks)
+    output_file = open(file + '.enc')
+    output_file.write(enc_msg)
+    output_file.close
 
 def cipher(state, key):
     keys = key_schedule.generate(key)
@@ -26,6 +27,7 @@ def cipher(state, key):
         shift_rows(state)
         mix_columns(state)
         add_round_key(state,key)
+    return state
 
 def sub_bytes(state,sub_box):
     result = state
@@ -37,14 +39,18 @@ def sub_bytes(state,sub_box):
             result[row][column] = bytes([sub_box[srow][scol]])
     return result
 
+def inverse_sub_bytes(state,sub_box):
+    pass
+
 def shift_rows(state):
     for row in range(4):
         current_row = state[row]
         for shift in range(row):
             current_row.append(current_row.pop(0))
-    #for row in state:
-        #print(row)
     return state
+
+def inverse_shift_rows(state):
+    pass
 
 def mix_columns(state):
     state = state_to_columns(state)
@@ -54,6 +60,9 @@ def mix_columns(state):
         for element in range(4):
             result[column][element] = multiply_vectors(state[column],factor[element])
     return state_to_rows(result)
+
+def inverse_mix_columns(state):
+    pass
 
 def multiply_vectors(column,factor):
     out = 0
@@ -68,13 +77,16 @@ def add_round_key(state,key):
     for column in range(4):
         col = state[column]
         for element in range(4):
-            #print(key,key[element])
-            result[column][element] = utils.xor(col[element],key)#[element])
+            result[column][element] = utils.xor(col[element],key)
     return state_to_rows(result)
 
 ###############################################################################
 
 def build_blocks(msg_bytes):
+    #TODO: bad padding
+    #msg_bytes = padding.pkcs7(msg_bytes)
+    while (len(msg_bytes) % 16 != 0):
+        msg_bytes += b'\x00'
     msg_bytes = list(msg_bytes)
     num_blocks = int(len(msg_bytes)/16)
     blocks = []
@@ -97,6 +109,11 @@ def build_blocks(msg_bytes):
         result.append(b)
     return result
 
+def build_message(blocks):
+    msg_bytes = blocks
+    msg_out = utils.base64Encode(msg_bytes)
+    return msg_out
+
 # transforms the state from rows to columns
 def state_to_columns(state):
     new_state = [[],[],[],[]]
@@ -114,8 +131,11 @@ if __name__ == "__main__":
              [b'\x01',b'\x01',b'\x01',b'\x01'],
              [b'\x01',b'\x01',b'\x01',b'\x01'],
              [b'\x01',b'\x01',b'\x01',b'\x01']]
-    state2 = mix_columns(state)
-    state3 = add_round_key(state,[b'\x02',b'\x02',b'\x02',b'\x02'])
-    sub_box = s_box.create()
-    state4 = sub_bytes(state,sub_box)
-    print(state4)
+    #state2 = mix_columns(state)
+    #state3 = add_round_key(state,[b'\x02',b'\x02',b'\x02',b'\x02'])
+    #sub_box = s_box.create()
+    #state4 = sub_bytes(state,sub_box)
+    msg = "test"
+    msg_bytes = bytes(msg,encoding='utf-8')
+    msg2 = build_message(build_blocks(msg_bytes))
+    print(msg,msg2)
