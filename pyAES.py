@@ -109,13 +109,13 @@ def build_blocks(msg_bytes):
         result.append(b)
     return result
 
-def build_message(blocks):
+def build_message(blocks: list):
     msg_bytes = blocks
     msg_out = utils.base64Encode(msg_bytes)
     return msg_out
 
 # transforms the state from rows to columns
-def state_to_columns(state):
+def state_to_columns(state: list):
     new_state = [[],[],[],[]]
     for column in range(4):
         for row in state:
@@ -123,7 +123,7 @@ def state_to_columns(state):
     return new_state
 
 # transforms the state from columns to rows
-def state_to_rows(state):
+def state_to_rows(state: list):
     return state_to_columns(state)
 
 if __name__ == "__main__":
