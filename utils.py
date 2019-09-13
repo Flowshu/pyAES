@@ -14,6 +14,18 @@ def hexEncode(msg):
 def hexDecode(hex_string):
     pass
 
+# transforms the state from rows to columns
+def state_to_columns(state: list):
+    new_state = [[],[],[],[]]
+    for column in range(4):
+        for row in state:
+            new_state[column].append(row[column])
+    return new_state
+
+# transforms the state from columns to rows
+def state_to_rows(state: list):
+    return state_to_columns(state)
+
 # computes the bitwise XOR of msg and key
 def xor(msg,key):
     msg_int = int.from_bytes(msg, byteorder = sys.byteorder)

@@ -29,6 +29,16 @@ def cipher(state, key):
         add_round_key(state,key)
     return state
 
+def inverse_cipher(state, key):
+    keys = key_schedule.generate(key)
+    sub_box = s_box.create()
+    for key in keys.reverse():
+        inv_sub_bytes(state,sub_box)
+        inv_shift_rows(state)
+        inv_mix_columns(state)
+        add_round_key(state,key)
+    return state
+
 def sub_bytes(state,sub_box):
     result = state
     for row in range(4):
@@ -50,19 +60,29 @@ def shift_rows(state):
     return state
 
 def inverse_shift_rows(state):
-    pass
+    for row in range(4):
+        current_row = state[row]
+        for shift in range(row):
+            current_row.insert(current_row.pop(3),0)
+    return state
 
 def mix_columns(state):
-    state = state_to_columns(state)
+    state = utils.state_to_columns(state)
     result = state
     factor = [[2,3,1,1],[1,2,3,1],[1,1,2,3],[3,1,1,2]]
     for column in range(4):
         for element in range(4):
             result[column][element] = multiply_vectors(state[column],factor[element])
-    return state_to_rows(result)
+    return utils.state_to_rows(result)
 
 def inverse_mix_columns(state):
-    pass
+    state = utils.state_to_columns(state)
+    result = state
+    factor = [[14,11,13,9],[9,14,11,13],[13,9,14,11],[11,13,9,14]]
+    for column in range(4):
+        for element in range(4):
+            result[column][element] = multiply_vectors(state[column],factor[element])
+    return utils.state_to_rows(result)
 
 def multiply_vectors(column,factor):
     out = 0
@@ -72,13 +92,13 @@ def multiply_vectors(column,factor):
     return bytes([out])
 
 def add_round_key(state,key):
-    state = state_to_columns(state)
+    state = utils.state_to_columns(state)
     result = state
     for column in range(4):
         col = state[column]
         for element in range(4):
             result[column][element] = utils.xor(col[element],key)
-    return state_to_rows(result)
+    return utils.state_to_rows(result)
 
 ###############################################################################
 
@@ -114,17 +134,7 @@ def build_message(blocks: list):
     msg_out = utils.base64Encode(msg_bytes)
     return msg_out
 
-# transforms the state from rows to columns
-def state_to_columns(state: list):
-    new_state = [[],[],[],[]]
-    for column in range(4):
-        for row in state:
-            new_state[column].append(row[column])
-    return new_state
 
-# transforms the state from columns to rows
-def state_to_rows(state: list):
-    return state_to_columns(state)
 
 if __name__ == "__main__":
     state = [[b'\x01',b'\x01',b'\x01',b'\x01'],
