@@ -1,4 +1,5 @@
 import base64
+import gf256
 import sys
 
 # wrapper-functions for the base64 module
@@ -35,3 +36,10 @@ def xor(msg,key):
     #return bytes(output)
     output = (msg_int ^ key_int) % 2**32
     return output.to_bytes(32, byteorder = sys.byteorder)
+
+def multiply_vectors(column,factor):
+    out = 0
+    for x in range(4):
+        y = int.from_bytes(column[x], byteorder = sys.byteorder)
+        out ^= gf256.mul_bytes(y,factor[x])
+    return bytes([out])

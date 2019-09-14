@@ -2,12 +2,11 @@ import utils
 import sys
 
 #import padding
-import gf256
 import s_box
 import key_schedule
 
 def encrypt(file,key):
-    input_file = open(file)
+    input_file = open(file,'r')
     msg = input_file.read()
     input_file.close()
     msg_bytes = bytes(msg,encoding='utf-8')
@@ -15,28 +14,58 @@ def encrypt(file,key):
     for block in blocks:
         block = cipher(block,key)
     enc_msg = build_message(blocks)
-    output_file = open(file + '.enc')
-    output_file.write(enc_msg)
+    output_file = open(file + '.enc','w')
+    output_file.write(enc_msg.decode("utf-8"))
+    output_file.close
+
+def decrypt(file,key):
+    input_file = open(file,'r')
+    msg = input_file.read()
+    input_file.close()
+    msg = utils.base64Decode(bytes(msg, "utf-8"))
+    blocks = build_blocks(msg)
+    for block in blocks:
+        block = inverse_cipher(block,key)
+    dec_msg = build_message(blocks)
+    output_file = open(file + '.dec','w')
+    output_file.write(dec_msg.decode("utf-8"))
     output_file.close
 
 def cipher(state, key):
     keys = key_schedule.generate(key)
     sub_box = s_box.create()
-    for key in keys:
+    
+    add_round_key(state,keys[0])
+    
+    for key in keys[1:len(keys)-1]:
         sub_bytes(state,sub_box)
         shift_rows(state)
         mix_columns(state)
         add_round_key(state,key)
+    
+    sub_bytes(state,sub_box)
+    shift_rows(state)
+    add_round_key(state,keys[len(keys)-1])
+    
     return state
 
 def inverse_cipher(state, key):
-    keys = key_schedule.generate(key)
+    keys = key_schedule.generate(key)#.reverse()
     sub_box = s_box.create()
-    for key in keys.reverse():
-        inv_sub_bytes(state,sub_box)
-        inv_shift_rows(state)
-        inv_mix_columns(state)
+
+    add_round_key(state,keys[0])
+
+    for key in keys[1:len(keys)-1]:
+        print(state)
+        inverse_shift_rows(state)
+        inverse_sub_bytes(state,sub_box)
         add_round_key(state,key)
+        inverse_mix_columns(state)
+
+    inverse_shift_rows(state)
+    inverse_sub_bytes(state,sub_box)
+    add_round_key(state,keys[len(keys)-1])
+
     return state
 
 def sub_bytes(state,sub_box):
@@ -50,7 +79,14 @@ def sub_bytes(state,sub_box):
     return result
 
 def inverse_sub_bytes(state,sub_box):
-    pass
+    result = state
+    for row in range(4):
+        for column in range(4):
+            value = int.from_bytes(state[row][column], byteorder=sys.byteorder)
+            srow = int(value / 16)
+            scol = value % 16
+            result[row][column] = bytes([sub_box[srow][scol]])
+    return result
 
 def shift_rows(state):
     for row in range(4):
@@ -63,7 +99,7 @@ def inverse_shift_rows(state):
     for row in range(4):
         current_row = state[row]
         for shift in range(row):
-            current_row.insert(current_row.pop(3),0)
+            current_row.insert(0,current_row.pop(3))
     return state
 
 def mix_columns(state):
@@ -72,24 +108,17 @@ def mix_columns(state):
     factor = [[2,3,1,1],[1,2,3,1],[1,1,2,3],[3,1,1,2]]
     for column in range(4):
         for element in range(4):
-            result[column][element] = multiply_vectors(state[column],factor[element])
+            result[column][element] = utils.multiply_vectors(state[column],factor[element])
     return utils.state_to_rows(result)
 
 def inverse_mix_columns(state):
     state = utils.state_to_columns(state)
     result = state
-    factor = [[14,11,13,9],[9,14,11,13],[13,9,14,11],[11,13,9,14]]
+    factor = [[0x0e,0x0b,0x0d,0x09],[0x09,0x0e,0x0b,0x0d],[0x0d,0x09,0x0e,0x0b],[0x0b,0x0d,0x09,0x0e]]
     for column in range(4):
         for element in range(4):
-            result[column][element] = multiply_vectors(state[column],factor[element])
+            result[column][element] = utils.multiply_vectors(state[column],factor[element])
     return utils.state_to_rows(result)
-
-def multiply_vectors(column,factor):
-    out = 0
-    for x in range(4):
-        y = int.from_bytes(column[x], byteorder = sys.byteorder)
-        out ^= gf256.mul_bytes(y,factor[x])
-    return bytes([out])
 
 def add_round_key(state,key):
     state = utils.state_to_columns(state)
@@ -124,28 +153,36 @@ def build_blocks(msg_bytes):
         for x in range(4):
             word = []
             for y in range(4):
-                word.append(bytes(chr(blocks[w][x][y]),"utf-8"))
+                word.append(bytes([blocks[w][x][y]]))
+                #word.append(bytes(chr(blocks[w][x][y]),"utf-8"))
             b.append(word)
         result.append(b)
     return result
 
 def build_message(blocks: list):
-    msg_bytes = blocks
+    msg_bytes = b''
+    for block in blocks:
+        for row in block:
+            for byt in row:
+                msg_bytes += byt
     msg_out = utils.base64Encode(msg_bytes)
     return msg_out
 
-
-
 if __name__ == "__main__":
-    state = [[b'\x01',b'\x01',b'\x01',b'\x01'],
-             [b'\x01',b'\x01',b'\x01',b'\x01'],
-             [b'\x01',b'\x01',b'\x01',b'\x01'],
-             [b'\x01',b'\x01',b'\x01',b'\x01']]
-    #state2 = mix_columns(state)
-    #state3 = add_round_key(state,[b'\x02',b'\x02',b'\x02',b'\x02'])
-    #sub_box = s_box.create()
-    #state4 = sub_bytes(state,sub_box)
-    msg = "test"
-    msg_bytes = bytes(msg,encoding='utf-8')
-    msg2 = build_message(build_blocks(msg_bytes))
-    print(msg,msg2)
+    state = [[b'\x01',b'\x02',b'\x03',b'\x04'],
+             [b'\x05',b'\x06',b'\x07',b'\x08'],
+             [b'\x09',b'\x0a',b'\x0b',b'\x0c'],
+             [b'\x0d',b'\x0e',b'\x0f',b'\x00']]
+    sbox = s_box.create()
+    inv_sbox = s_box.create_inverse()
+    print(state)
+    print(shift_rows(state))
+    print(inverse_shift_rows(state))
+    print()
+    print(state)
+    print(sub_bytes(state, sbox))
+    print(inverse_sub_bytes(state, inv_sbox))
+    print()
+    print(state)
+    print(mix_columns(state))
+    print(inverse_mix_columns(state))
