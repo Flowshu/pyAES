@@ -1,5 +1,9 @@
-import unittest
+import sys
+sys.path.insert(0, '../')
+
 import padding
+
+import unittest
 
 class PaddingTest(unittest.TestCase):
     def test_apply_padding(self):

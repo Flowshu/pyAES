@@ -1,7 +1,12 @@
-import unittest
+import sys
+sys.path.insert(0, '../')
+
 import pyAES
-from copy import deepcopy
 import s_box
+
+import unittest
+from copy import deepcopy
+
 
 class pyAES_test(unittest.TestCase):
     TEST_STATE = [[b'\x01',b'\x02',b'\x03',b'\x04'],
