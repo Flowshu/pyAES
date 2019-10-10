@@ -24,8 +24,8 @@ def generate(key: bytes) -> list:
     return key_schedule
 
 # converts the list of words generated through key expansion into a list of keys
-# param: word_list -- a list of words(list of 4 integers)
-# return: key_schedule -- a list of keys as bytes-object ([b'...',...,b'...'])
+# param: schedule -- a list of words(list of 4 integers)
+# return: keys -- a list of keys as bytes-object ([b'...',...,b'...'])
 def build_schedule_from_words(schedule: list) -> list:
     keys = []
     for round in range(int(len(schedule)/4)):
@@ -36,7 +36,10 @@ def build_schedule_from_words(schedule: list) -> list:
         keys.append(key)
     return keys
 
-# validates the key length to be 16, 24 or 32 byte
+# validates the key length to be 16, 24 or 32 bytes and calculates the rounds
+# param: key -- a key as bytes-object
+# return words -- a list of words(list of 4 integers)
+# return rounds -- the number of rounds for the key expansion as integer
 def check_and_transform_key(key: bytes):
     if len(key) == 16:
         words, rounds = transform_key(key), 11
@@ -45,10 +48,17 @@ def check_and_transform_key(key: bytes):
     elif len(key) == 32:
         words, rounds = transform_key(key), 15
     else:
-        words, rounds = [], -1
+        print('ERROR: Invalid key length!') 
+        print('Please provide a key with one of the following lengths:')
+        print('  - 128 bit / 16 byte')
+        print('  - 196 bit / 24 byte')
+        print('  - 256 bit / 32 byte')
+        exit(1)
     return words, rounds
 
-# transforms a key into an array of 32-bit/4-byte words
+# transforms a key into a list of 32-bit/4-byte words/integers
+# param: key -- a key as bytes-object
+# return words -- a list of words(list of 4 integers)
 def transform_key(key: bytes) -> list:
     key_bytes = list(key)
     words = []
