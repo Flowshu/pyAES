@@ -63,11 +63,18 @@ class pyAES_test(unittest.TestCase):
 
     def test_add_round_key(self):
         state = deepcopy(self.TEST_STATE)
-        key = b'\x01\x02\x03\x04\x05\x06\x07\x08\x09\x0a\x0b\x0c\x0d\x0e\x0f\x00'
+        key = b'\x01\x05\x09\x0d\x02\x06\x0a\x0e\x03\x07\x0b\x0f\x04\x08\x0c\x00'
         round_key_added = [[b'\x00',b'\x00',b'\x00',b'\x00'],
                            [b'\x00',b'\x00',b'\x00',b'\x00'],
                            [b'\x00',b'\x00',b'\x00',b'\x00'],
                            [b'\x00',b'\x00',b'\x00',b'\x00']]
+        self.assertEqual(pyAES.add_round_key(state,key), round_key_added)
+        state = deepcopy(self.TEST_STATE)
+        key = b'\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00'
+        round_key_added = [[b'\x01',b'\x02',b'\x03',b'\x04'],
+                           [b'\x05',b'\x06',b'\x07',b'\x08'],
+                           [b'\x09',b'\x0a',b'\x0b',b'\x0c'],
+                           [b'\x0d',b'\x0e',b'\x0f',b'\x00']]
         self.assertEqual(pyAES.add_round_key(state,key), round_key_added)
 
 if __name__ == "__main__":

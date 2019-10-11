@@ -29,6 +29,7 @@ def state_to_rows(state: list):
 
 # computes the bitwise XOR of msg and key
 def xor(msg,key):
+    #return bytes([msg[0] ^ key])
     msg_int = int.from_bytes(msg, byteorder = sys.byteorder)
     key_int = int.from_bytes(key, byteorder = sys.byteorder)
     #for byt in range(len(msg)):

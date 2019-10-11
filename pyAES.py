@@ -1,7 +1,7 @@
 import utils
 import sys
 
-#import padding
+import padding
 import s_box
 import key_schedule
 
@@ -126,14 +126,15 @@ def add_round_key(state,key):
     for column in range(4):
         col = state[column]
         for element in range(4):
-            result[column][element] = utils.xor(col[element],key)
+            msg = col[element]
+            key_byt = key[(column*4)+element]
+            result[column][element] = bytes([msg[0] ^ key_byt])
     return utils.state_to_rows(result)
 
 ###############################################################################
 
 def build_blocks(msg_bytes):
-    #TODO: bad padding
-    #msg_bytes = padding.pkcs7(msg_bytes)
+    msg_bytes = padding.apply_padding(msg_bytes)
     while (len(msg_bytes) % 16 != 0):
         msg_bytes += b'\x00'
     msg_bytes = list(msg_bytes)
@@ -154,7 +155,6 @@ def build_blocks(msg_bytes):
             word = []
             for y in range(4):
                 word.append(bytes([blocks[w][x][y]]))
-                #word.append(bytes(chr(blocks[w][x][y]),"utf-8"))
             b.append(word)
         result.append(b)
     return result
